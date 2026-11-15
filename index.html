@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭教育热点看板 · DSH 影视工作室</title>
+<style>
+  :root{
+    --bg:#f6f3ee; --card:#ffffff; --ink:#1f1c18; --ink2:#6b645b; --line:#e6e0d6;
+    --accent:#c2572b; --accent-soft:#f3e3d9; --muted:#9a9187;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 20px 80px}
+  header h1{font-size:30px;letter-spacing:.5px;margin:0 0 6px;font-weight:800}
+  header .sub{color:var(--ink2);font-size:14px;margin:0}
+  header .sub b{color:var(--accent)}
+  .stats{display:flex;gap:28px;margin:26px 0 8px;flex-wrap:wrap}
+  .stat .n{font-size:22px;font-weight:800;color:var(--accent)}
+  .stat .l{font-size:12px;color:var(--muted)}
+  .toolbar{display:flex;gap:10px;align-items:center;margin:26px 0 18px;flex-wrap:wrap}
+  .search{flex:1;min-width:220px;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+  .search input{border:0;outline:0;background:transparent;font:inherit;width:100%;color:var(--ink)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1px solid var(--line);background:var(--card);color:var(--ink2);padding:7px 14px;border-radius:999px;font-size:13px;cursor:pointer}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:0 0 14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .card-top{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-bottom:8px}
+  .issue{background:var(--accent-soft);color:var(--accent);font-weight:700;padding:2px 8px;border-radius:6px}
+  .pill{margin-left:auto;font-size:12px;padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--ink2)}
+  .pill.done{background:#fdeee7;border-color:#f2c9b6;color:var(--accent)}
+  .card h2{font-size:18px;margin:2px 0 6px;line-height:1.45}
+  .card h2 a{color:var(--ink);text-decoration:none}
+  .card h2 a:hover{color:var(--accent);text-decoration:underline}
+  .meta{font-size:12px;color:var(--muted);margin:0 0 10px}
+  .card p{margin:6px 0;font-size:14px;color:#3a352f}
+  .card p b{color:var(--ink);font-weight:700}
+  .heat{color:#7a4a2c!important;background:#fbf3ec;border-left:3px solid #e0a77f;padding:6px 10px;border-radius:0 6px 6px 0}
+  .sum{color:#3a352f}
+  .take{background:#f4f7f4;border-left:3px solid #9dbfa9;padding:6px 10px;border-radius:0 6px 6px 0}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .tag{font-size:11px;color:var(--ink2);background:#f1ede6;padding:2px 8px;border-radius:999px}
+  .empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:18px 22px;text-align:center;color:var(--muted);font-size:13px;margin-bottom:14px}
+  .empty.warn{background:#fdf6ec;border-color:#e9d3b4;color:#8a5a2b;text-align:left;line-height:1.65}
+  .empty.warn b{color:#7a4a1f}
+  footer{margin-top:36px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:16px}
+  @media (max-width:560px){ .wrap{padding:26px 14px 60px} header h1{font-size:24px} .stats{gap:18px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>家庭教育热点看板</h1>
+    <p class="sub">DSH 影视工作室 · 内容采集员每小时采集 · 最新一条 <b id="latest">—</b> · 全天 24 小时</p>
+    <div class="stats">
+      <div class="stat"><div class="n" id="count">0</div><div class="l">已收录期数</div></div>
+      <div class="stat"><div class="n" id="done">0</div><div class="l">已立项</div></div>
+      <div class="stat"><div class="n">60s</div><div class="l">当前短片《第一反应》</div></div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search">
+      <span>🔍</span>
+      <input id="q" type="search" placeholder="搜索标题、平台、标签…">
+    </div>
+    <div class="chips" id="chips">
+      <button class="chip on" data-f="all">全部</button>
+      <button class="chip" data-f="已立项">已立项</button>
+      <button class="chip" data-f="备选">备选</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="empty warn" id="warn" style="display:none"></div>
+    <div class="empty" id="missing" style="display:none"></div>
+    <div id="cards"></div>
+  </main>
+
+  <footer>
+    数据来源：内容采集员每小时自动采集 · 热度依据以可查证为准，查不到的说明原因，不编造数字。<br>
+    采集员更新「data.js」后刷新本页即可看到新内容；数据格式以 node validate.cjs 校验为准。
+  </footer>
+</div>
+
+<script src="data.js" onerror="window.__DATA_LOAD_ERROR__='data.js 没能加载（文件不在同一文件夹、被改名，或内容不是可执行的 JS）'"></script>
+<script>
+  (function () {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const cardsEl = $('cards'), missEl = $('missing'), warnEl = $('warn');
+    const q = $('q'), chips = $('chips');
+    let filter = 'all';
+    let items = [];
+
+    const STATUS = ['已立项', '备选'];
+    const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+    const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const isText = v => typeof v === 'string' && v.trim() !== '';
+
+    function showFatal(title, detail) {
+      cardsEl.innerHTML = '';
+      missEl.style.display = 'none';
+      warnEl.className = 'empty warn';
+      warnEl.style.display = '';
+      warnEl.innerHTML = '<b>' + esc(title) + '</b><br>' + esc(detail);
+      $('count').textContent = '—';
+      $('done').textContent = '—';
+      $('latest').textContent = '—';
+    }
+
+    function problemsOf(it, i) {
+      const tag = '第 ' + (i + 1) + ' 条' + (it && Number.isInteger(it.period) ? '（第 ' + it.period + ' 期）' : '');
+      if (!it || typeof it !== 'object') return [tag + '：不是对象'];
+      const p = [];
+      if (!Number.isInteger(it.period) || it.period < 1) p.push(tag + '：period 期号缺失或不是正整数');
+      if (!DATE_RE.test(String(it.date || ''))) p.push(tag + '：date 应为 YYYY-MM-DD');
+      if (!TIME_RE.test(String(it.time || ''))) p.push(tag + '：time 应为 HH:MM');
+      ['title', 'source', 'heat', 'summary', 'takeaway'].forEach(k => {
+        if (!isText(it[k])) p.push(tag + '：' + k + ' 为空或不是文字');
+      });
+      if (STATUS.indexOf(it.status) === -1) p.push(tag + '：status 只能是「已立项」或「备选」');
+      if (!Array.isArray(it.tags) || it.tags.some(t => !isText(t))) p.push(tag + '：tags 应是文字数组，如 ["亲子沟通"]');
+      if (it.url != null && it.url !== '' && !/^https?:\/\//i.test(String(it.url))) p.push(tag + '：url 应以 http:// 或 https:// 开头，没有链接就写 ""');
+      return p;
+    }
+
+    function cardHTML(it) {
+      const done = it.status === '已立项';
+      const title = it.url
+        ? '<a href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a>'
+        : esc(it.title);
+      const tags = (it.tags || []).map(t => '<span class="tag">' + esc(t) + '</span>').join('');
+      return '<article class="card" data-status="' + esc(it.status) + '">' +
+        '<div class="card-top">' +
+          '<span class="issue">第 ' + esc(it.period) + ' 期</span>' +
+          '<time>' + esc(it.time) + '</time>' +
+          '<span class="pill' + (done ? ' done' : '') + '">' + esc(it.status) + '</span>' +
+        '</div>' +
+        '<h2>' + title + '</h2>' +
+        '<p class="meta">' + esc(it.source) + '</p>' +
+        '<p class="heat"><b>热度</b> · ' + esc(it.heat) + '</p>' +
+        '<p class="sum">' + esc(it.summary) + '</p>' +
+        '<p class="take"><b>可借鉴</b> · ' + esc(it.takeaway) + '</p>' +
+        '<div class="tags">' + tags + '</div>' +
+        '</article>';
+    }
+
+    function render() {
+      const kw = q.value.trim().toLowerCase();
+      let html = '', done = 0;
+      items.forEach(it => {
+        const hay = [it.title, it.source, it.heat, it.summary, it.takeaway, (it.tags || []).join(' ')].join(' ').toLowerCase();
+        if ((filter === 'all' || it.status === filter) && (!kw || hay.indexOf(kw) !== -1)) html += cardHTML(it);
+        if (it.status === '已立项') done++;
+      });
+      cardsEl.innerHTML = html || '<div class="empty">没有匹配的条目' + (kw ? '，换个关键词试试' : '') + '</div>';
+      $('count').textContent = items.length;
+      $('done').textContent = done;
+
+      const have = new Set(items.map(i => i.period));
+      const max = items.length ? Math.max.apply(null, items.map(i => i.period)) : 0;
+      const miss = [];
+      for (let p = 1; p <= max; p++) if (!have.has(p)) miss.push(p);
+      if (miss.length && !kw) {
+        missEl.style.display = '';
+        missEl.textContent = '第 ' + miss.join('、') + ' 期记录缺失，等采集员补齐后自动出现。';
+      } else {
+        missEl.style.display = 'none';
+      }
+    }
+
+    function main() {
+      if (window.__DATA_LOAD_ERROR__) {
+        showFatal('数据文件没加载成功', window.__DATA_LOAD_ERROR__ + '。请确认「data.js」和本页在同一个文件夹；刚改过数据就先运行 node validate.cjs 看哪里写错了。');
+        return;
+      }
+      if (!Array.isArray(window.HOT_ITEMS)) {
+        showFatal('数据文件格式不对', '页面要读 window.HOT_ITEMS = [ … ] 这样的数组，但没读到。请运行 node validate.cjs 检查data.js。');
+        return;
+      }
+      if (!window.HOT_ITEMS.length) {
+        showFatal('数据文件是空的', 'data.js 里一条记录都没有。采集员写入第一条后刷新本页即可。');
+        return;
+      }
+
+      const bad = [];
+      items = window.HOT_ITEMS.filter((it, i) => {
+        const p = problemsOf(it, i);
+        if (p.length) bad.push.apply(bad, p);
+        return !p.length;
+      });
+      const seen = new Set();
+      items = items.filter(it => {
+        if (seen.has(it.period)) { bad.push('第 ' + it.period + ' 期重复出现，只显示第一条'); return false; }
+        seen.add(it.period);
+        return true;
+      });
+      items.sort((a, b) => b.period - a.period);
+
+      if (bad.length) {
+        warnEl.className = 'empty warn';
+        warnEl.style.display = '';
+        warnEl.innerHTML = '<b>有 ' + bad.length + ' 处数据问题，相关条目已跳过、未上屏</b><br>' + esc(bad.join('；')) +
+          '<br>改完请运行 node validate.cjs 复核。';
+      } else {
+        warnEl.style.display = 'none';
+      }
+
+      if (!items.length) {
+        showFatal('没有可显示的条目', '数据文件里的记录全部格式不对，已全部跳过。请运行 node validate.cjs 查看详细原因。');
+        return;
+      }
+
+      const latest = items.reduce((m, it) => (!m || (it.date + ' ' + it.time) > (m.date + ' ' + m.time) ? it : m), null);
+      $('latest').textContent = latest ? (latest.date + ' ' + latest.time) : '—';
+      render();
+    }
+
+    chips.addEventListener('click', e => {
+      const b = e.target.closest('.chip'); if (!b) return;
+      chips.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+      filter = b.dataset.f; render();
+    });
+    q.addEventListener('input', render);
+
+    try { main(); } catch (err) { showFatal('页面渲染出错（数据可能写坏了）', String((err && err.message) || err) + '。请运行 node validate.cjs 检查data.js。'); }
+  })();
+</script>
+</body>
+</html>
