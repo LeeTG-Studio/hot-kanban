@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>家庭教育热点看板 · DSH 影视工作室</title>
+<title>热点看板 · DSH 影视工作室</title>
 <style>
   :root{
     --bg:#f6f3ee; --card:#ffffff; --ink:#1f1c18; --ink2:#6b645b; --line:#e6e0d6;
@@ -24,6 +24,10 @@
   .chips{display:flex;gap:8px;flex-wrap:wrap}
   .chip{border:1px solid var(--line);background:var(--card);color:var(--ink2);padding:7px 14px;border-radius:999px;font-size:13px;cursor:pointer}
   .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tabs{display:flex;gap:8px;margin:26px 0 0;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:var(--card);color:var(--ink2);padding:9px 18px;border-radius:10px;font-size:15px;cursor:pointer;font-weight:600}
+  .tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tab .tnum{font-size:12px;opacity:.8;margin-left:5px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:0 0 14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
   .card-top{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-bottom:8px}
   .issue{background:var(--accent-soft);color:var(--accent);font-weight:700;padding:2px 8px;border-radius:6px}
@@ -50,14 +54,19 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>家庭教育热点看板</h1>
-    <p class="sub">DSH 影视工作室 · 内容采集员每小时采集 · 最新一条 <b id="latest">—</b> · 全天 24 小时</p>
+    <h1>热点看板</h1>
+    <p class="sub">DSH 影视工作室 · 家庭教育 + AIGC · 内容采集员每小时采集 · 最新一条 <b id="latest">—</b></p>
     <div class="stats">
       <div class="stat"><div class="n" id="count">0</div><div class="l">已收录期数</div></div>
       <div class="stat"><div class="n" id="done">0</div><div class="l">已立项</div></div>
       <div class="stat"><div class="n">60s</div><div class="l">当前短片《第一反应》</div></div>
     </div>
   </header>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-cat="家庭教育">家庭教育<span class="tnum" id="n-edu">0</span></button>
+    <button class="tab" data-cat="AIGC">AIGC<span class="tnum" id="n-ai">0</span></button>
+  </div>
 
   <div class="toolbar">
     <div class="search">
@@ -89,8 +98,9 @@
     'use strict';
     const $ = id => document.getElementById(id);
     const cardsEl = $('cards'), missEl = $('missing'), warnEl = $('warn');
-    const q = $('q'), chips = $('chips');
+    const q = $('q'), chips = $('chips'), tabs = $('tabs');
     let filter = 'all';
+    let category = '家庭教育';
     let items = [];
 
     const STATUS = ['已立项', '备选'];
@@ -121,6 +131,7 @@
         if (!isText(it[k])) p.push(tag + '：' + k + ' 为空或不是文字');
       });
       if (STATUS.indexOf(it.status) === -1) p.push(tag + '：status 只能是「已立项」或「备选」');
+      if (it.category != null && ['家庭教育', 'AIGC'].indexOf(it.category) === -1) p.push(tag + '：category 只能是「家庭教育」或「AIGC」');
       if (!Array.isArray(it.tags) || it.tags.some(t => !isText(t))) p.push(tag + '：tags 应是文字数组，如 ["亲子沟通"]');
       if (it.url != null && it.url !== '' && !/^https?:\/\//i.test(String(it.url))) p.push(tag + '：url 应以 http:// 或 https:// 开头，没有链接就写 ""');
       return p;
@@ -147,17 +158,24 @@
         '</article>';
     }
 
+    function updateTabCounts() {
+      $('n-edu').textContent = items.filter(it => (it.category || '家庭教育') === '家庭教育').length;
+      $('n-ai').textContent = items.filter(it => it.category === 'AIGC').length;
+    }
+
     function render() {
       const kw = q.value.trim().toLowerCase();
+      const pool = items.filter(it => (it.category || '家庭教育') === category);
       let html = '', done = 0;
-      items.forEach(it => {
+      pool.forEach(it => {
         const hay = [it.title, it.source, it.heat, it.summary, it.takeaway, (it.tags || []).join(' ')].join(' ').toLowerCase();
         if ((filter === 'all' || it.status === filter) && (!kw || hay.indexOf(kw) !== -1)) html += cardHTML(it);
         if (it.status === '已立项') done++;
       });
       cardsEl.innerHTML = html || '<div class="empty">没有匹配的条目' + (kw ? '，换个关键词试试' : '') + '</div>';
-      $('count').textContent = items.length;
+      $('count').textContent = pool.length;
       $('done').textContent = done;
+      updateTabCounts();
 
       const have = new Set(items.map(i => i.period));
       const max = items.length ? Math.max.apply(null, items.map(i => i.period)) : 0;
@@ -213,7 +231,8 @@
         return;
       }
 
-      const latest = items.reduce((m, it) => (!m || (it.date + ' ' + it.time) > (m.date + ' ' + m.time) ? it : m), null);
+      const pool = items.filter(it => (it.category || '家庭教育') === category);
+      const latest = pool.reduce((m, it) => (!m || (it.date + ' ' + it.time) > (m.date + ' ' + m.time) ? it : m), null);
       $('latest').textContent = latest ? (latest.date + ' ' + latest.time) : '—';
       render();
     }
@@ -222,6 +241,11 @@
       const b = e.target.closest('.chip'); if (!b) return;
       chips.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
       filter = b.dataset.f; render();
+    });
+    tabs.addEventListener('click', e => {
+      const b = e.target.closest('.tab'); if (!b) return;
+      tabs.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b));
+      category = b.dataset.cat; render();
     });
     q.addEventListener('input', render);
 
